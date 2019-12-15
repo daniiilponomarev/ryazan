@@ -1,17 +1,20 @@
 import React from 'react';
-import {HeaderProps} from 'react-navigation';
-import {IconButton} from '../IconButton';
-import {Container, Content, Title} from './atoms';
+import {NavigationStackOptions} from 'react-navigation-stack';
+import {theme} from '../../consts';
+import {CloseIcon} from './atoms';
 
-export const WindowHeader: React.FC<HeaderProps> = ({navigation, scene}) =>
-    <Container>
-        <IconButton
-            icon="close"
-            color="white"
-            onPress={() => navigation.goBack(null)}
-        />
+const headerBackImage = () =>
+        <CloseIcon name="close" size={theme.iconSize} color="white" />
 
-        <Content>
-            <Title>{scene.descriptor.options.title}</Title>
-        </Content>
-    </Container>
+export const windowHeaderConfig: NavigationStackOptions = {
+    headerStyle: {
+        height: theme.headerHeight,
+        backgroundColor: theme.windowHeaderColor,
+    },
+    headerTintColor: 'white',
+    headerBackImage,
+    headerBackTitle: null,
+    headerTitleStyle: {
+        textTransform: 'uppercase',
+    },
+};

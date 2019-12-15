@@ -1,12 +1,14 @@
 import React, {useState} from 'react';
+import {StatusBar} from 'react-native';
 import ApolloClient, {InMemoryCache} from 'apollo-boost';
 import {ApolloProvider as ApolloHooksProvider} from 'react-apollo-hooks';
 import {ApolloProvider} from 'react-apollo';
-import {AppLoading} from 'expo';
+import {AppLoading, Linking} from 'expo';
 import * as Font from 'expo-font';
 import {AppNavigator} from './src/Navigator';
 import {env} from './src/consts';
-import { messageBox } from './src/services';
+import {messageBox} from './src/services';
+import {FavoritesProvider, FilterProvider} from './src/providers';
 
 const client = new ApolloClient({
     uri: `${env.apiUrl}/graphql`,
@@ -15,12 +17,13 @@ const client = new ApolloClient({
 
 const App = () => {
     const [isReady, setIsReady] = useState(false);
+    const uriPrefix = Linking.makeUrl('/');
 
     const load = async () => {
         await Font.loadAsync({
-            Roboto: require('./assets/fonts/roboto/Roboto-Regular.ttf'),
-            RobotoMedium: require('./assets/fonts/roboto/Roboto-Medium.ttf'),
-            RobotoBold: require('./assets/fonts/roboto/Roboto-Bold.ttf'),
+            'PT Sans': require('./assets/fonts/pt-sans/PTSans-Regular.ttf'),
+            'PT Sans Bold': require('./assets/fonts/pt-sans/PTSans-Bold.ttf'),
+            'IcoMoon': require('./assets/fonts/icomoon.ttf'),
         });
     };
 
@@ -35,7 +38,12 @@ const App = () => {
     return (
         <ApolloProvider client={client}>
             <ApolloHooksProvider client={client}>
-                <AppNavigator />
+                <FavoritesProvider>
+                    <FilterProvider>
+                        <StatusBar barStyle="dark-content" />
+                        <AppNavigator uriPrefix={uriPrefix} />
+                    </FilterProvider>
+                </FavoritesProvider>
             </ApolloHooksProvider>
         </ApolloProvider>
     );

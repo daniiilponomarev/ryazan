@@ -1,55 +1,30 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {NavigationScreenComponent} from 'react-navigation';
-import {useQuery} from 'react-apollo-hooks';
-import {gql} from 'apollo-boost';
+import React, {useState, useRef, useEffect} from 'react';
+import {NavigationBottomTabScreenComponent} from 'react-navigation-tabs';
 import _ from 'lodash';
-import MapView, {Marker, MapViewProps, PROVIDER_GOOGLE} from 'react-native-maps';
-import {createTabIcon, PoiCard, Modal, PoiCardAction, ScreenHeader, Filter} from '../../components';
+import {Polyline} from 'react-native-maps';
+import {createTabIcon, PoiCard, Modal, PoiCardAction, PoiMap, PoiMapControl, ScreenHeader} from '../../components';
 import {LoadingIndicator} from './components';
 import {messageBox} from '../../services';
 import * as Types from '../../types/graphql';
-import {Map} from './atoms';
-import mapStyle from '../../../config/map-style.json';
+import {routeToPolyline} from './utils';
+import {theme} from '../../consts';
+import {useFilter} from '../../providers';
+import {MapContainer} from './atoms';
+import {useData} from './use-data';
 
-const GET_POIS = gql`
-    query($search: String!) {
-        pois(
-            where: {
-                name_contains: $search
-            }
-        ) {
-            id
-            name
-            description
-            latitude
-            longitude
-            photos {
-                content {
-                    url
-                }
-            }
-        }
-    }
-`;
-
-const initialRegion = {
-    latitude: 54.629216,
-    longitude: 39.736375,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-};
-
-type MapScreenParams = {
+export type MapScreenParams = {
     poiId: Types.Poi['id'],
+    routeId: Types.Route['id'],
 };
 
-export const MapScreen: NavigationScreenComponent<MapScreenParams> = ({navigation}) => {
-    const [filter, setFilter] = useState<Filter>({search: '', categories: []});
-    const mapRef = useRef<MapView>(null);
+export const MapScreen: NavigationBottomTabScreenComponent<MapScreenParams> = ({navigation}) => {
+    const [filter, setFilter] = useFilter();
+    const mapControlRef = useRef<PoiMapControl>(null);
 
-    const {data, loading, error} = useQuery<Types.Query>(GET_POIS, {variables: filter});
+    const poiId = navigation.getParam('poiId');
+    const routeId = navigation.getParam('routeId');
+    const {loading, error, isRoute, pois} = useData({routeId, filter});
     useEffect(_.partial(messageBox.error, error), [error]);
-    const pois = data && data.pois;
 
     const [selectedMarker, setSelectedMarker] = useState<Types.Poi | null>(null);
     const unselectMarker = () => setSelectedMarker(null);
@@ -62,57 +37,45 @@ export const MapScreen: NavigationScreenComponent<MapScreenParams> = ({navigatio
 
     /* moves the camera to a specified marker */
     useEffect(() => {
-        if (!(mapRef.current && pois)) return;
+        if (!(mapControlRef.current && pois && pois.length)) return;
 
-        const id = navigation.getParam('poiId');
-        if (!id) return;
-
-        const marker = _.find(pois, {id});
-        if (!marker) return;
-
-        mapRef.current.animateCamera({
-            center: {
-                longitude: marker.longitude,
-                latitude: marker.latitude,
-            },
-        });
-    }, [pois, navigation.state.params]);
-
-    const handleMarkerPress: MapViewProps['onMarkerPress'] = ({nativeEvent: {id}}) => {
-        if (!data) return;
-        const marker = _.find(pois, {id}) || null;
-        setSelectedMarker(marker);
-    };
+        if (routeId) {
+            mapControlRef.current.animateToPoi(pois[0]);
+        } else if (poiId) {
+            const marker = _.find(pois, {id: poiId});
+            if (!marker) return;
+            mapControlRef.current.animateToPoi(marker);
+        }
+    }, [pois, poiId, routeId]);
 
     return (
         <>
             <ScreenHeader
+                title="Карта"
+                enableFilter={!isRoute}
                 filter={filter}
                 onFilterChange={setFilter}
             />
 
-            <Map
-                ref={mapRef}
-                provider={PROVIDER_GOOGLE}
-                customMapStyle={mapStyle}
-                initialRegion={initialRegion}
-                showsUserLocation
-                followsUserLocation
-                onMarkerPress={handleMarkerPress}
-            >
-                {pois && pois.map(poi =>
-                    <Marker
-                        key={poi!.id}
-                        identifier={poi!.id}
-                        coordinate={{
-                            latitude: poi!.latitude,
-                            longitude: poi!.longitude,
-                        }}
-                    />
-                )}
-            </Map>
+            <MapContainer>
+                <PoiMap
+                    controlRef={mapControlRef}
+                    enableClusters={!isRoute}
+                    pois={pois}
+                    onPoiPress={setSelectedMarker}
+                >
+                    {isRoute &&
+                        <Polyline
+                            coordinates={routeToPolyline(pois)}
+                            strokeColor={theme.routeLineColor}
+                            strokeWidth={3}
+                            lineCap="round"
+                        />
+                    }
+                </PoiMap>
 
-            {loading && <LoadingIndicator />}
+                {loading && <LoadingIndicator />}
+            </MapContainer>
 
             {selectedMarker &&
                 <Modal onClose={unselectMarker}>
@@ -124,5 +87,5 @@ export const MapScreen: NavigationScreenComponent<MapScreenParams> = ({navigatio
 };
 
 MapScreen.navigationOptions = {
-    tabBarIcon: createTabIcon('place'),
+    tabBarIcon: createTabIcon('map'),
 };

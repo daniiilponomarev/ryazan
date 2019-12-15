@@ -1,21 +1,20 @@
 import React, {useEffect} from 'react';
-import {NavigationScreenComponent} from 'react-navigation';
+import {NavigationStackScreenComponent} from 'react-navigation-stack';
 import {useQuery} from 'react-apollo-hooks';
 import {gql} from 'apollo-boost';
 import _ from 'lodash';
 import * as Types from '../../types/graphql';
-import {FooterButton, LoadingScreen, WindowHeader} from '../../components';
+import {H1, Button, LoadingScreen, PhotoSwiper} from '../../components';
 import {messageBox} from '../../services';
-import {Routes, env} from '../../consts';
+import {Routes} from '../../consts';
 
 import {
+    SafeArea,
     Container,
     Scroll,
-    Picture,
-    Content,
-    Title,
-    Subtitle,
     Description,
+    CloseButton,
+    Footer,
 } from './atoms';
 
 const GET_POI = gql`
@@ -23,6 +22,10 @@ const GET_POI = gql`
         poi(id: $id) {
             name
             description
+            building
+            street {
+                name
+            }
             photos {
                 content {
                     url
@@ -36,7 +39,7 @@ export type PoiDetailsScreenParams = {
     poiId: Types.Poi['id'],
 };
 
-export const PoiDetailsScreen: NavigationScreenComponent<PoiDetailsScreenParams> = ({navigation}) => {
+export const PoiDetailsScreen: NavigationStackScreenComponent<PoiDetailsScreenParams> = ({navigation}) => {
     const id = navigation.getParam('poiId');
 
     const {loading, data, error} = useQuery<Types.Query>(GET_POI, {
@@ -57,34 +60,27 @@ export const PoiDetailsScreen: NavigationScreenComponent<PoiDetailsScreenParams>
     if (data && data.poi) {
         const {name, description, photos} = data.poi;
 
-        const provider = _.get(photos, '0.content.provider');
-        const url = _.get(photos, '0.content.url');
-        const photoUri = (provider === 'local' ? env.apiUrl : "") + url;
-        const descriptionLines = (description || '').split('\n');
-
         return (
-            <Container>
-                <Scroll bounces={false}>
-                    <Picture source={{uri: photoUri}} />
+            <SafeArea>
+                <Container>
+                    <PhotoSwiper photos={photos} />
+                    <CloseButton onPress={() => navigation.goBack(null)} />
 
-                    <Content>
-                        <Title>{name}</Title>
-                        <Subtitle>Here goes the address</Subtitle>
-                        {descriptionLines.map(line => <Description key={line}>{line}</Description>)}
-                    </Content>
-                </Scroll>
+                    <Scroll bounces={false}>
+                        <H1>{name}</H1>
+                        <Description>{description}</Description>
 
-                <FooterButton
-                    label="Show on map"
-                    onPress={() => navigation.navigate(Routes.MAP, {poiId: id})}
-                />
-            </Container>
+                        <Footer>
+                            <Button
+                                label="На карте"
+                                onPress={() => navigation.navigate(Routes.MAP, {poiId: id})}
+                            />
+                        </Footer>
+                    </Scroll>
+                </Container>
+            </SafeArea>
         );
     }
 
     return null;
-};
-
-PoiDetailsScreen.navigationOptions = {
-    header: WindowHeader,
 };

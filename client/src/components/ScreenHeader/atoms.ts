@@ -1,10 +1,9 @@
 import styled from 'styled-components/native';
+import {IconButton} from '../buttons';
 import {Header} from '../Header';
 import {theme} from '../../consts';
 
-export const Container = styled(Header).attrs({
-    statusBarStyle: 'dark-content',
-})`
+export const Container = styled(Header)`
     background-color: white;
     ${theme.defaultShadow}
 `;
@@ -12,14 +11,14 @@ export const Container = styled(Header).attrs({
 export const Content = styled.View`
     flex: 1;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 `;
 
 export const Title = styled.Text`
-    font-family: Roboto;
-    font-size: 14;
-    font-weight: 500;
+    font-family: "PT Sans";
+    font-size: 17;
     text-transform: uppercase;
+    padding-left: 10;
 `;
 
 export const SearchInput = styled.TextInput`
@@ -27,3 +26,9 @@ export const SearchInput = styled.TextInput`
     border-bottom-width: 2;
     border-bottom-color: ${theme.lightGrey}
 `;
+
+export const Button = styled(IconButton).attrs({
+    size: 26,
+})`
+    aspect-ratio: 1;
+`

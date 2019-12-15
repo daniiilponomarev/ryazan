@@ -1,24 +1,7 @@
 import styled from 'styled-components/native';
-import {Header} from '../Header';
-import {theme} from '../../consts';
+import {MaterialIcons} from '@expo/vector-icons';
+import {Platform} from 'react-native';
 
-export const Container = styled(Header).attrs({
-    statusBarStyle: 'light-content',
-})`
-    background-color: ${theme.windowHeaderColor};
-`;
-
-export const Content = styled.View`
-    flex: 1;
-    justify-content: center;
-    align-items: center;
-    margin-right: 60;
-`;
-
-export const Title = styled.Text`
-    font-family: Roboto;
-    font-size: 14;
-    font-weight: 500;
-    text-transform: uppercase;
-    color: white;
+export const CloseIcon = styled(MaterialIcons)`
+    padding-left: ${Platform.OS === 'ios' ? 14 : 0}
 `;

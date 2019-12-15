@@ -1,8 +1,17 @@
 import React from 'react';
-import {TabBarIconProps} from 'react-navigation';
-import {MaterialIcons} from '@expo/vector-icons';
+import {Icon} from './Icon';
 import {theme} from '../consts';
 
+type TabBarIconProps = {
+    focused: boolean,
+    tintColor?: string,
+    horizontal?: boolean,
+};
+
 export const createTabIcon = (iconName: string) =>
-  ({tintColor}: TabBarIconProps) =>
-      <MaterialIcons name={iconName} size={theme.iconSize} color={tintColor} />
+    ({tintColor, focused}: TabBarIconProps) =>
+        <Icon
+            name={focused ? `${iconName}-active` : iconName}
+            size={theme.iconSize}
+            color={tintColor}
+        />
